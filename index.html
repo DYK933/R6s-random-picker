@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彩虹六号：围攻 - 随机抽取</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei UI", "PingFang SC", sans-serif;
+    background: #1b1f27; color: #e6e8ec;
+    min-height: 100vh; display: flex; justify-content: center; padding: 20px;
+  }
+  .container { width: 100%; max-width: 640px; }
+  h1 { color: #f2a900; font-size: 24px; text-align: center; margin: 18px 0 14px; }
+  fieldset {
+    border: 1px solid #333a47; border-radius: 6px;
+    padding: 10px 16px; margin-bottom: 12px;
+  }
+  legend { color: #c8ccd4; font-size: 14px; padding: 0 6px; }
+  label.radio, label.check {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 6px 18px 6px 4px; cursor: pointer; font-size: 15px;
+  }
+  input[type=radio], input[type=checkbox] { accent-color: #f2a900; width: 16px; height: 16px; cursor: pointer; }
+  select {
+    background: #333a47; color: #e6e8ec; border: 1px solid #454e5e;
+    border-radius: 4px; padding: 4px 8px; font-size: 14px; max-width: 100%;
+  }
+  .hint { color: #8a919e; font-size: 12px; text-align: center; margin: 4px 0 10px; }
+  .btn-row { display: flex; gap: 14px; justify-content: center; margin: 14px 0; }
+  button {
+    border: none; border-radius: 6px; cursor: pointer;
+    font-size: 16px; font-weight: bold; padding: 12px 0; flex: 1; max-width: 220px;
+    font-family: inherit; transition: opacity .15s;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #rollBtn { background: #f2a900; color: #1b1f27; }
+  #rollBtn:not(:disabled):hover { background: #ffc633; }
+  #resetBtn { background: #333a47; color: #e6e8ec; }
+  #resetBtn:hover { background: #454e5e; }
+  .results {
+    background: #12151b; border: 1px solid #333a47; border-radius: 6px;
+    padding: 14px 18px; margin-bottom: 20px;
+  }
+  .rrow { display: flex; padding: 10px 0; align-items: baseline; }
+  .rrow .name { color: #8a919e; font-weight: bold; width: 110px; font-size: 15px; flex-shrink: 0; }
+  .rrow .val { color: #e6e8ec; font-weight: bold; font-size: 15px; word-break: break-all; }
+  .rrow .val.done { color: #f2a900; }
+  .rrow .val.empty { color: #5a616e; }
+  @media (max-width: 480px) {
+    .rrow .name { width: 90px; font-size: 13px; }
+    .rrow .val { font-size: 13px; }
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="container">
+  <h1>RAINBOW SIX SIEGE 随机抽取</h1>
+
+  <fieldset>
+    <legend> 阵营 </legend>
+    <label class="radio"><input type="radio" name="side" value="attack">进攻方</label>
+    <label class="radio"><input type="radio" name="side" value="defense">防守方</label>
+    <label class="radio"><input type="radio" name="side" value="random" checked>随机阵营</label>
+  </fieldset>
+
+  <fieldset>
+    <legend> 抽取板块（勾选启用） </legend>
+    <div>
+      <label class="check"><input type="checkbox" id="m_operator" checked>角色抽取</label>
+      <select id="opSelect"></select>
+    </div>
+    <div><label class="check"><input type="checkbox" id="m_weapon" checked>武器抽取</label></div>
+    <div><label class="check"><input type="checkbox" id="m_attachment" checked>武器配件抽取</label></div>
+    <div><label class="check"><input type="checkbox" id="m_gadget" checked>道具抽取</label></div>
+  </fieldset>
+
+  <div class="hint">提示：指定干员后，武器 / 道具将从该干员的实际配置中抽取</div>
+
+  <div class="btn-row">
+    <button id="rollBtn">开 始 抽 取</button>
+    <button id="resetBtn">重 置</button>
+  </div>
+
+  <div class="results">
+    <div class="rrow"><span class="name">角色抽取：</span><span class="val empty" id="r_operator">——</span></div>
+    <div class="rrow"><span class="name">武器抽取：</span><span class="val empty" id="r_weapon">——</span></div>
+    <div class="rrow"><span class="name">武器配件抽取：</span><span class="val empty" id="r_attachment">——</span></div>
+    <div class="rrow"><span class="name">道具抽取：</span><span class="val empty" id="r_gadget">——</span></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"attackers": ["Striker", "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne", "Glaz", "Fuze", "Blitz", "IQ", "Buck", "Blackbeard", "Capitao", "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka", "Maverick", "Nomad", "Gridlock", "Nokk", "Amaru", "Kali", "Iana", "Ace", "Zero", "Flores", "Osa", "Sens", "Grim", "Brava", "Ram", "Deimos", "Rauora", "Solid Snake"], "defenders": ["Sentry", "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan", "Tachanka", "Jager", "Bandit", "Frost", "Valkyrie", "Caveira", "Echo", "Mira", "Lesion", "Ela", "Vigil", "Maestro", "Alibi", "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx", "Melusi", "Aruni", "Thunderbird", "Thorn", "Azami", "Solis", "Fenrir", "Tubarao", "Skopos", "Denari", "Noor"], "weapons": {"突击步枪": ["L85A2", "AR33", "556xi", "G36C", "R4-C", "F2", "AK-12", "AUG A2", "552 Commando", "416-C Carbine", "C8-SFW", "MK17 CQB", "PARA-308", "Type-89", "C7E", "M762", "V308", "Spear .308", "M4", "ARX200", "AK-74M", "F90", "Commando 9", "SC3000K", "POF-9", "PCX-33", "XK23"], "冲锋枪": ["PDW9", "FMG-9", "MP5K", "UMP45", "MP5", "P90", "9x19VSN", "MP7", "9mm C1", "MPX", "M12", "MP5SD", "Vector .45 ACP", "T-5 SMG", "Scorpion EVO 3 A1", "K1A", "Mx4 Storm", "AUG A3", "P10 RONI转换套件衍生型", "UZK50GI"], "霰弹枪": ["ACS12", "BOSG.12.2", "TCSG12", "M590A1", "M1014", "SG-CQB", "SASG-12", "M870", "Super 90", "SPAS-12", "SPAS-15", "SuperNova", "ITA12L", "SIX12", "SIX12 SD", "FO-12", "Super Shorty", "ITA12S", "Glaive-12"], "狙击枪": ["OTs-03", "CSRX 300"], "精确射手步枪": ["417", "CAMRS", "SR-25", "Mk 14 EBR", "AR-15.50", "PMR90A2"], "轻机枪": ["6P41", "DP27", "G8A1", "M249", "T-95 LSW", "LMG-E", "ALDA 5.56", "M249 SAW"], "自动手枪": ["SMG-11", "Bearing 9", "C75 Auto", "SMG-12", "SPSMG9", "Reaper MK2"], "手枪": ["P226 Mk 25", "M45 MEUSOC", "5.7 USG", "P9", "LFP586", "PMM", "GSH-18", "P12", "MK1 9mm", "D-50", "PRB92", "Luison狼人手枪", "P229", "USP40", "Q-929", "15型半自动手枪", "Keratos .357", "1911 TACOPS", "P-10C", ".44麦格农", "SDP 9mm", "Bailiff 410", ".44 Vendetta", "TACIT .45"], "特殊": ["Gonne-6手枪", "防弹护盾"]}, "attachments": {"瞄具": {"通用": ["红点瞄准器A型", "红点瞄准器B型", "红点瞄准器C型", "全息瞄准器A型", "全息瞄准器B型", "全息瞄准器C型", "全息瞄准器D型", "反射式瞄准器A型", "反射式瞄准器B型", "反射式瞄准器C型", "2.5倍瞄准镜A型", "2.5倍瞄准镜B型", "2.5倍瞄准镜C型", "3.5倍瞄准镜A型", "3.5倍瞄准镜B型"], "DP27专用": ["反射式瞄准器D型(DP27专用)"], "固定红点": ["红点瞄准器特殊款(15型半自动手枪/P-10C/Bailiff 410专用)"]}, "枪口": ["消音器", "消焰器", "补偿器", "制退器", "延长枪管"], "握把": ["垂直握把", "转角握把"], "下挂": ["激光指示器", "无下挂"]}, "gadgets": {"attack": ["破片手榴弹", "烟雾弹", "闪光弹", "爆破炸药", "硬突破炸药", "阔剑地雷", "电磁脉冲冲击手雷"], "defense": ["遥控炸药(C4)", "倒刺铁丝网", "防弹摄像头", "机动护盾", "冲击手榴弹", "感应警报器", "观测工具阻拦器"]}, "loadouts": {"Striker": {"primary": ["M4", "M249", "SR-25"], "secondary": ["5.7 USG", "ITA12S"], "gadgets": ["破片手榴弹", "烟雾弹", "闪光弹", "爆破炸药", "硬突破炸药", "阔剑地雷", "电磁脉冲冲击手雷"]}, "Sledge": {"primary": ["L85A2", "M590A1"], "secondary": ["P226 Mk 25", "Reaper MK2"], "gadgets": ["破片手榴弹", "闪光弹", "电磁脉冲冲击手雷"]}, "Thatcher": {"primary": ["AR33", "L85A2", "M590A1", "PMR90A2"], "secondary": ["P226 Mk 25"], "gadgets": ["爆破炸药", "阔剑地雷"]}, "Ash": {"primary": ["R4-C", "G36C"], "secondary": ["M45 MEUSOC", "5.7 USG"], "gadgets": ["爆破炸药", "阔剑地雷"]}, "Thermite": {"primary": ["556xi", "M1014"], "secondary": ["M45 MEUSOC", "5.7 USG", "ITA12S"], "gadgets": ["烟雾弹", "闪光弹"]}, "Twitch": {"primary": ["F2", "417", "SG-CQB"], "secondary": ["P9", "LFP586"], "gadgets": ["烟雾弹", "阔剑地雷"]}, "Montagne": {"primary": ["Le Roc防弹护盾"], "secondary": ["P9", "LFP586"], "gadgets": ["烟雾弹", "硬突破炸药", "电磁脉冲冲击手雷"]}, "Glaz": {"primary": ["OTs-03"], "secondary": ["PMM", "Gonne-6", "Bearing 9"], "gadgets": ["烟雾弹", "破片手榴弹", "阔剑地雷"]}, "Fuze": {"primary": ["防弹护盾", "6P41", "AK-12"], "secondary": ["PMM", "GSH-18"], "gadgets": ["烟雾弹", "硬突破炸药", "爆破炸药"]}, "Blitz": {"primary": ["G52战术护盾"], "secondary": ["P12"], "gadgets": ["烟雾弹", "爆破炸药"]}, "IQ": {"primary": ["AUG A2", "552 Commando", "G8A1"], "secondary": ["P12"], "gadgets": ["破片手榴弹", "爆破炸药", "阔剑地雷"]}, "Buck": {"primary": ["C8-SFW", "CAMRS"], "secondary": ["MK1 9mm"], "gadgets": ["阔剑地雷", "闪光弹"]}, "Blackbeard": {"primary": ["MK17 CQB", "SR-25"], "secondary": [], "gadgets": ["阔剑地雷", "破片手榴弹"]}, "Capitao": {"primary": ["PARA-308", "M249", "PMR90A2"], "secondary": ["PRB92", "Gonne-6"], "gadgets": ["阔剑地雷", "硬突破炸药", "电磁脉冲冲击手雷"]}, "Hibana": {"primary": ["Type-89", "SuperNova", "PMR90A2"], "secondary": ["P229", "Bearing 9"], "gadgets": ["爆破炸药", "闪光弹", "阔剑地雷"]}, "Jackal": {"primary": ["C7E", "PDW9", "ITA12L"], "secondary": ["USP40", "ITA12S"], "gadgets": ["烟雾弹", "阔剑地雷", "破片手榴弹"]}, "Ying": {"primary": ["T-95 LSW", "SIX12"], "secondary": ["Q-929", "Reaper MK2"], "gadgets": ["烟雾弹", "硬突破炸药"]}, "Zofia": {"primary": ["LMG-E", "M762"], "secondary": ["RG15"], "gadgets": ["阔剑地雷", "硬突破炸药"]}, "Dokkaebi": {"primary": ["Mk 14 EBR", "BOSG.12.2", "XK23"], "secondary": ["SMG-12", "C75 Auto", "Gonne-6"], "gadgets": ["烟雾弹", "爆破炸药"]}, "Lion": {"primary": ["V308", "417", "SG-CQB"], "secondary": ["P9", "LFP586"], "gadgets": ["阔剑地雷", "闪光弹", "破片手榴弹"]}, "Finka": {"primary": ["Spear .308", "6P41", "SASG-12"], "secondary": ["PMM", "GSH-18"], "gadgets": ["破片手榴弹", "闪光弹", "烟雾弹"]}, "Maverick": {"primary": ["AR-15.50", "M4"], "secondary": ["1911 TACOPS", "Reaper MK2"], "gadgets": ["阔剑地雷", "破片手榴弹", "闪光弹"]}, "Nomad": {"primary": ["AK-74M", "ARX200"], "secondary": [".44 Mag Semi-Auto", "PRB92"], "gadgets": ["爆破炸药", "闪光弹"]}, "Gridlock": {"primary": ["F90", "M249 SAW"], "secondary": ["Super Shorty", "SDP 9mm"], "gadgets": ["烟雾弹", "破片手榴弹", "电磁脉冲冲击手雷"]}, "Nokk": {"primary": ["FMG-9", "SIX12 SD", "PMR90A2"], "secondary": ["5.7 USG", "D-50"], "gadgets": ["硬突破炸药", "破片手榴弹", "电磁脉冲冲击手雷"]}, "Amaru": {"primary": ["G8A1", "SuperNova"], "secondary": ["SMG-11", "ITA12S", "Gonne-6"], "gadgets": ["硬突破炸药", "闪光弹"]}, "Kali": {"primary": ["CSRX 300"], "secondary": ["P226 Mk 25", "C75 Auto", "SPSMG9"], "gadgets": ["阔剑地雷", "爆破炸药", "烟雾弹"]}, "Iana": {"primary": ["G36C", "ARX200"], "secondary": ["MK1 9mm", "Gonne-6"], "gadgets": ["烟雾弹", "电磁脉冲冲击手雷"]}, "Ace": {"primary": ["AK-12", "M1014"], "secondary": ["P9"], "gadgets": ["闪光弹", "阔剑地雷"]}, "Zero": {"primary": ["SC3000K", "MP7"], "secondary": ["5.7 USG", "Gonne-6"], "gadgets": ["硬突破炸药", "阔剑地雷"]}, "Flores": {"primary": ["AR33", "SR-25", "T-95 LSW"], "secondary": ["GSH-18"], "gadgets": ["闪光弹", "阔剑地雷"]}, "Osa": {"primary": ["556xi", "PDW9"], "secondary": ["PMM"], "gadgets": ["阔剑地雷", "破片手榴弹", "电磁脉冲冲击手雷"]}, "Sens": {"primary": ["POF-9", "417", "XK23"], "secondary": ["SDP 9mm"], "gadgets": ["硬突破炸药", "阔剑地雷", "破片手榴弹"]}, "Grim": {"primary": ["552 Commando", "SG-CQB"], "secondary": ["P229", "Bailiff 410"], "gadgets": ["电磁脉冲冲击手雷", "阔剑地雷", "硬突破炸药"]}, "Brava": {"primary": ["PARA-308", "CAMRS"], "secondary": ["USP40", "Super Shorty"], "gadgets": ["烟雾弹", "阔剑地雷"]}, "Ram": {"primary": ["R4-C", "LMG-E"], "secondary": ["MK1 9mm"], "gadgets": ["闪光弹", "烟雾弹"]}, "Deimos": {"primary": ["AK-74M", "M590A1"], "secondary": [".44 Vendetta"], "gadgets": ["破片手榴弹", "硬突破炸药"]}, "Rauora": {"primary": ["M249", "417", "XK23"], "secondary": ["GSH-18", "Reaper MK2"], "gadgets": ["烟雾弹", "爆破炸药"]}, "Solid Snake": {"primary": ["F2", "PMR90A2"], "secondary": ["TACIT .45"], "gadgets": ["爆破炸药", "破片手榴弹", "烟雾弹", "电磁脉冲冲击手雷", "闪光弹"]}, "Sentry": {"primary": ["Commando 9", "M870", "TCSG12"], "secondary": ["C75 Auto", "Super Shorty"], "gadgets": ["遥控炸药(C4)", "倒刺铁丝网", "机动护盾", "防弹摄像头", "冲击手榴弹", "感应警报器", "观测工具阻拦器"]}, "Smoke": {"primary": ["FMG-9", "M590A1"], "secondary": ["P226 Mk 25", "SMG-11"], "gadgets": ["倒刺铁丝网", "感应警报器", "机动护盾"]}, "Mute": {"primary": ["MP5K", "M590A1"], "secondary": ["P226 Mk 25", "SMG-11"], "gadgets": ["遥控炸药(C4)", "防弹摄像头"]}, "Castle": {"primary": ["UMP45", "M1014"], "secondary": ["5.7 USG", "M45 MEUSOC", "Super Shorty"], "gadgets": ["防弹摄像头", "感应警报器"]}, "Pulse": {"primary": ["UMP45", "M1014"], "secondary": ["5.7 USG", "M45 MEUSOC", "Reaper MK2"], "gadgets": ["遥控炸药(C4)", "机动护盾", "观测工具阻拦器"]}, "Doc": {"primary": ["MP5", "P90", "SG-CQB"], "secondary": ["P9", "LFP586", "Bailiff 410"], "gadgets": ["倒刺铁丝网", "防弹摄像头"]}, "Rook": {"primary": ["MP5", "P90", "SG-CQB"], "secondary": ["P9", "LFP586", "Reaper MK2"], "gadgets": ["感应警报器", "冲击手榴弹", "遥控炸药(C4)"]}, "Kapkan": {"primary": ["9x19VSN", "SASG-12"], "secondary": ["PMM", "GSH-18"], "gadgets": ["防弹摄像头", "倒刺铁丝网"]}, "Tachanka": {"primary": ["DP27", "9x19VSN"], "secondary": ["PMM", "GSH-18", "Bearing 9"], "gadgets": ["倒刺铁丝网", "机动护盾", "感应警报器"]}, "Jager": {"primary": ["416-C Carbine", "M870"], "secondary": ["P12", "P-10C"], "gadgets": ["观测工具阻拦器", "防弹摄像头"]}, "Bandit": {"primary": ["MP7", "M870"], "secondary": ["P12", "Keratos .357"], "gadgets": ["倒刺铁丝网", "遥控炸药(C4)"]}, "Frost": {"primary": ["Super 90", "9mm C1"], "secondary": ["MK1 9mm", "ITA12S"], "gadgets": ["防弹摄像头", "机动护盾"]}, "Valkyrie": {"primary": ["MPX", "SPAS-12"], "secondary": ["D-50", "Glaive-12"], "gadgets": ["冲击手榴弹", "遥控炸药(C4)"]}, "Caveira": {"primary": ["M12", "SPAS-15"], "secondary": ["Luison"], "gadgets": ["冲击手榴弹", "感应警报器", "观测工具阻拦器"]}, "Echo": {"primary": ["MP5SD", "SuperNova"], "secondary": ["P229", "Bearing 9"], "gadgets": ["冲击手榴弹", "机动护盾"]}, "Mira": {"primary": ["Vector .45 ACP", "ITA12L"], "secondary": ["USP40", "ITA12S"], "gadgets": ["遥控炸药(C4)", "感应警报器"]}, "Lesion": {"primary": ["SIX12 SD", "T-5 SMG"], "secondary": ["Q-929"], "gadgets": ["观测工具阻拦器", "防弹摄像头"]}, "Ela": {"primary": ["Scorpion EVO 3 A1", "FO-12"], "secondary": ["RG15"], "gadgets": ["倒刺铁丝网", "机动护盾", "冲击手榴弹"]}, "Vigil": {"primary": ["K1A", "BOSG.12.2"], "secondary": ["SMG-12", "C75 Auto"], "gadgets": ["防弹摄像头", "冲击手榴弹"]}, "Maestro": {"primary": ["ALDA 5.56", "ACS12"], "secondary": ["Keratos .357", "Bailiff 410"], "gadgets": ["倒刺铁丝网", "冲击手榴弹", "观测工具阻拦器"]}, "Alibi": {"primary": ["Mx4 Storm", "ACS12"], "secondary": ["Keratos .357", "Bailiff 410"], "gadgets": ["观测工具阻拦器", "感应警报器"]}, "Clash": {"primary": ["CCS防弹护盾"], "secondary": ["P-10C", "SPSMG9", "Super Shorty"], "gadgets": ["倒刺铁丝网", "冲击手榴弹"]}, "Kaid": {"primary": ["AUG A3", "TCSG12"], "secondary": [".44 Mag Semi-Auto", "LFP586"], "gadgets": ["遥控炸药(C4)", "倒刺铁丝网", "观测工具阻拦器"]}, "Mozzie": {"primary": ["Commando 9", "P10 RONI"], "secondary": ["SDP 9mm", "Super Shorty"], "gadgets": ["遥控炸药(C4)", "倒刺铁丝网", "冲击手榴弹"]}, "Warden": {"primary": ["M590A1", "MPX"], "secondary": ["P-10C", "SMG-12"], "gadgets": ["遥控炸药(C4)", "机动护盾", "观测工具阻拦器"]}, "Goyo": {"primary": ["Vector .45 ACP", "TCSG12"], "secondary": ["P229"], "gadgets": ["冲击手榴弹", "防弹摄像头", "感应警报器"]}, "Wamai": {"primary": ["AUG A2", "MP5K"], "secondary": ["Keratos .357", "Super Shorty", "P12"], "gadgets": ["遥控炸药(C4)", "机动护盾", "感应警报器"]}, "Oryx": {"primary": ["SPAS-12", "T-5 SMG"], "secondary": ["Bailiff 410", "USP40", "Reaper MK2"], "gadgets": ["倒刺铁丝网", "感应警报器"]}, "Melusi": {"primary": ["MP5", "Super 90"], "secondary": ["RG15", "ITA12S"], "gadgets": ["防弹摄像头", "冲击手榴弹"]}, "Aruni": {"primary": ["P10 RONI", "Mk 14 EBR"], "secondary": ["PRB92"], "gadgets": ["倒刺铁丝网", "防弹摄像头"]}, "Thunderbird": {"primary": ["SPEAR .308", "SPAS-15"], "secondary": ["BEARING 9", "Q-929", "ITA12S"], "gadgets": ["倒刺铁丝网", "防弹摄像头", "机动护盾", "冲击手榴弹", "感应警报器"]}, "Thorn": {"primary": ["UZK50GI", "M870"], "secondary": ["1911 TACOPS", "C75 Auto"], "gadgets": ["倒刺铁丝网", "机动护盾"]}, "Azami": {"primary": ["9x19VSN", "ACS12"], "secondary": ["D-50"], "gadgets": ["冲击手榴弹", "倒刺铁丝网"]}, "Solis": {"primary": ["P90", "ITA12L"], "secondary": ["SMG-11"], "gadgets": ["冲击手榴弹", "感应警报器"]}, "Fenrir": {"primary": ["MP7", "SASG-12"], "secondary": ["5.7 USG"], "gadgets": ["防弹摄像头", "观测工具阻拦器"]}, "Tubarao": {"primary": ["MPX", "AR-15.50"], "secondary": ["P226 Mk 25"], "gadgets": ["遥控炸药(C4)", "感应警报器"]}, "Skopos": {"primary": ["PCX-33"], "secondary": ["P229"], "gadgets": ["冲击手榴弹", "感应警报器"]}, "Denari": {"primary": ["FMG-9", "SCORPION EVO 3 A1"], "secondary": ["P226 MK 25", "Glaive-12"], "gadgets": ["机动护盾", "观测工具阻拦器"]}, "Noor": {"primary": ["Commando 9", "ALDA 5.56"], "secondary": ["1911 TACOPS", "Bailiff 410"], "gadgets": ["倒刺铁丝网", "机动护盾"]}}};
+
+const MODULES = ["operator", "weapon", "attachment", "gadget"];
+const MODULE_NAMES = { operator:"角色抽取", weapon:"武器抽取", attachment:"武器配件抽取", gadget:"道具抽取" };
+
+// ---------- 状态 ----------
+let rolling = false;
+let results = {};        // {板块key: 结果文本}
+let drawnOp = null;      // 本轮已确定的干员
+let drawnSide = null;
+let drawnWeapons = null; // 本次武器（供配件判断限定瞄具）
+
+// ---------- 瞄具规则（与 Python 版一致） ----------
+const FIXED_SIGHT_GUNS = ["15型半自动手枪", "P-10C", "Bailiff 410"];
+const SCOPE_RULES = {
+  "霰弹枪": { allow_25: ["ACS12", "TCSG12", "BOSG.12.2"], allow_35: [] },
+  "冲锋枪": { allow_25: ["PDW9", "FMG-9"], allow_35: [] },
+};
+const OPERATOR_SCOPE_BAN = {
+  "Smoke":   { "FMG-9": ["2.5倍"] },
+  "Aruni":   { "Mk 14 EBR": ["3.5倍"] },
+  "Tubarao": { "AR-15.50": ["3.5倍"] },
+};
+
+function weaponCategory(name) {
+  for (const [cat, lst] of Object.entries(DATA.weapons)) {
+    if (lst.includes(name)) return cat;
+  }
+  return null;
+}
+
+function sightsFor(weapon) {
+  const sights = DATA.attachments["瞄具"];
+  let pool = [...sights["通用"]];
+  const rule = SCOPE_RULES[weaponCategory(weapon)];
+  const banned = [];
+  if (rule) {
+    if (!rule.allow_25.includes(weapon)) banned.push("2.5倍");
+    if (!rule.allow_35.includes(weapon)) banned.push("3.5倍");
+  }
+  if (drawnOp && OPERATOR_SCOPE_BAN[drawnOp] && OPERATOR_SCOPE_BAN[drawnOp][weapon]) {
+    banned.push(...OPERATOR_SCOPE_BAN[drawnOp][weapon]);
+  }
+  if (banned.length) {
+    pool = pool.filter(s => !banned.some(b => s.startsWith(b)));
+  }
+  return pool;
+}
+
+function sightPool() {
+  const sights = DATA.attachments["瞄具"];
+  const weapons = (drawnWeapons || []).filter(w => w && w !== "无");
+  if (weapons.some(w => FIXED_SIGHT_GUNS.includes(w))) {
+    return sights["固定红点"];
+  }
+  let pool;
+  if (weapons.length) {
+    pool = sightsFor(weapons[0]);
+    for (const w of weapons.slice(1)) {
+      const allowed = new Set(sightsFor(w));
+      pool = pool.filter(s => allowed.has(s));
+    }
+  } else {
+    pool = [...sights["通用"]];
+  }
+  if (weapons.includes("DP27")) {
+    pool = pool.concat(sights["DP27专用"]);
+  }
+  return pool;
+}
+
+// ---------- 生成器 ----------
+function pickSide() {
+  const s = document.querySelector('input[name=side]:checked').value;
+  return s === "random" ? (Math.random() < 0.5 ? "attack" : "defense") : s;
+}
+
+function genOperator(side) {
+  const pool = side === "attack" ? DATA.attackers : DATA.defenders;
+  const op = pool[Math.floor(Math.random() * pool.length)];
+  return (side === "attack" ? "进攻方 · " : "防守方 · ") + op;
+}
+
+function loadout(opName) {
+  return opName ? (DATA.loadouts[opName] || null) : null;
+}
+
+function genWeapon(opName) {
+  const lo = loadout(opName);
+  if (lo) {
+    const prim = lo.primary.length ? lo.primary[Math.floor(Math.random() * lo.primary.length)] : "无";
+    const sec  = lo.secondary.length ? lo.secondary[Math.floor(Math.random() * lo.secondary.length)] : "无";
+    drawnWeapons = [prim, sec];
+    return `主武器：${prim} ｜ 副武器：${sec}`;
+  }
+  const cats = Object.keys(DATA.weapons);
+  const cat = cats[Math.floor(Math.random() * cats.length)];
+  const lst = DATA.weapons[cat];
+  const w = lst[Math.floor(Math.random() * lst.length)];
+  drawnWeapons = [w, null];
+  return cat + " · " + w;
+}
+
+function genAttachment() {
+  const atts = DATA.attachments;
+  const parts = [];
+  for (const k of Object.keys(atts)) {
+    const pool = k === "瞄具" ? sightPool() : atts[k];
+    parts.push(k + ":" + pool[Math.floor(Math.random() * pool.length)]);
+  }
+  return parts.join(" | ");
+}
+
+function genGadget(side, opName) {
+  const lo = loadout(opName);
+  if (lo && lo.gadgets && lo.gadgets.length) {
+    const pool = lo.gadgets;
+    if ((opName === "Striker" || opName === "Sentry") && pool.length >= 2) {
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      return "次要装备 ×2：" + shuffled.slice(0, 2).join(" ＋ ");
+    }
+    return "次要装备：" + pool[Math.floor(Math.random() * pool.length)];
+  }
+  const pool = side === "attack" ? DATA.gadgets.attack : DATA.gadgets.defense;
+  return (side === "attack" ? "进攻方 · " : "防守方 · ") + pool[Math.floor(Math.random() * pool.length)];
+}
+
+// 供动画期间滚动显示的随机文本
+const rollerFns = {
+  operator:   () => genOperator(pickSide()),
+  weapon:     () => { const c = Object.keys(DATA.weapons); const cat = c[Math.floor(Math.random()*c.length)]; const l = DATA.weapons[cat]; return cat + " · " + l[Math.floor(Math.random()*l.length)]; },
+  attachment: () => genAttachment(),
+  gadget:     () => { const s = Math.random() < 0.5 ? "attack" : "defense"; const p = s === "attack" ? DATA.gadgets.attack : DATA.gadgets.defense; return (s === "attack" ? "进攻方 · " : "防守方 · ") + p[Math.floor(Math.random()*p.length)]; },
+};
+
+// ---------- 干员下拉 ----------
+function initOpSelect() {
+  const sel = document.getElementById("opSelect");
+  let opts = ['<option value="随机">随机</option>'];
+  for (const n of DATA.attackers) opts.push(`<option value="${n}">${n}（进攻）</option>`);
+  for (const n of DATA.defenders) opts.push(`<option value="${n}">${n}（防守）</option>`);
+  sel.innerHTML = opts.join("");
+  sel.addEventListener("change", onOpChange);
+}
+
+function selectedOperator() {
+  const v = document.getElementById("opSelect").value;
+  return v === "随机" ? null : v;
+}
+
+function onOpChange() {
+  for (const key of ["operator", "weapon", "gadget"]) {
+    delete results[key];
+    const el = document.getElementById("r_" + key);
+    el.textContent = "——";
+    el.className = "val empty";
+  }
+  drawnOp = null; drawnSide = null; drawnWeapons = null;
+}
+
+// ---------- 抽取 ----------
+function roll() {
+  if (rolling) return;
+  const enabled = MODULES.filter(k => document.getElementById("m_" + k).checked);
+  if (!enabled.length) { alert("请至少勾选一个抽取板块！"); return; }
+
+  // 未勾选板块的旧结果作废
+  for (const key of Object.keys(results)) {
+    if (!enabled.includes(key)) {
+      delete results[key];
+      const el = document.getElementById("r_" + key);
+      el.textContent = "——";
+      el.className = "val empty";
+      if (key === "weapon") drawnWeapons = null;
+    }
+  }
+
+  const pending = enabled.filter(k => !(k in results));
+  if (!pending.length) {
+    alert("勾选的板块均已抽取完毕，如需重抽请点击“重 置”。");
+    return;
+  }
+
+  // 确定干员：定向选择 > 已抽取保留 > 本次随机
+  const targetOp = selectedOperator();
+  let opName, side;
+  if (targetOp) {
+    opName = targetOp;
+    side = DATA.attackers.includes(targetOp) ? "attack" : "defense";
+  } else if (drawnOp) {
+    opName = drawnOp; side = drawnSide;
+  } else if (enabled.includes("operator")) {
+    side = pickSide();
+    const pool = side === "attack" ? DATA.attackers : DATA.defenders;
+    opName = pool[Math.floor(Math.random() * pool.length)];
+  } else {
+    side = drawnSide || pickSide();
+    opName = null;
+    if (pending.includes("weapon") || pending.includes("gadget")) {
+      const pool = side === "attack" ? DATA.attackers : DATA.defenders;
+      opName = pool[Math.floor(Math.random() * pool.length)];
+    }
+  }
+  if (opName) { drawnOp = opName; drawnSide = side; }
+
+  // 先算好各板块最终结果
+  const finals = {};
+  for (const key of pending) {
+    if (key === "operator") {
+      if (!opName) continue;
+      finals[key] = (side === "attack" ? "进攻方 · " : "防守方 · ") + opName;
+    } else if (key === "weapon") {
+      finals[key] = genWeapon(opName);
+    } else if (key === "attachment") {
+      finals[key] = genAttachment();
+    } else if (key === "gadget") {
+      finals[key] = genGadget(side, opName);
+    }
+  }
+
+  // 滚动动画后定格（动画期间展示随机文本）
+  rolling = true;
+  const btn = document.getElementById("rollBtn");
+  btn.disabled = true;
+  btn.textContent = "抽 取 中 ...";
+
+  const pendingAnims = pending.filter(k => finals[k] !== undefined);
+  let finished = 0;
+  for (const key of pendingAnims) {
+    animate(key, finals[key], () => {
+      results[key] = finals[key];
+      finished++;
+      if (finished === pendingAnims.length) {
+        rolling = false;
+        btn.disabled = false;
+        btn.textContent = "开 始 抽 取";
+      }
+    });
+  }
+  for (const key of pending) {
+    if (!(key in finals)) results[key] = results[key]; // 保底
+  }
+}
+
+function animate(key, final, done) {
+  const el = document.getElementById("r_" + key);
+  el.className = "val";
+  let step = 0, delay = 45;
+  function tick() {
+    if (step >= 14) {
+      el.textContent = final;
+      el.className = "val done";
+      done();
+      return;
+    }
+    el.textContent = rollerFns[key]();
+    step++;
+    delay = Math.round(delay * 1.22);
+    setTimeout(tick, delay);
+  }
+  tick();
+}
+
+function resetAll() {
+  results = {};
+  drawnOp = null; drawnSide = null; drawnWeapons = null;
+  for (const key of MODULES) {
+    const el = document.getElementById("r_" + key);
+    el.textContent = "——";
+    el.className = "val empty";
+  }
+}
+
+// ---------- 初始化 ----------
+initOpSelect();
+document.getElementById("rollBtn").addEventListener("click", roll);
+document.getElementById("resetBtn").addEventListener("click", resetAll);
+</script>
+</body>
+</html>
